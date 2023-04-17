@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+<style>
+html {
+    background-color: #ffd6e2;
+    margin-top:0px;
+    padding-top:0px;
+}
+.tile {
+  display: table-cell;
+  background-size:cover;
+  width:150px;
+  height:150px;
+}
+.form {
+  display: inline-grid;
+  grid-template-columns: 33% 33% 33%;
+  grid-gap: 5px;
+  padding:5px 10px 5px 5px;
+}
+.button{
+    background-color: #ff96b4;
+    color: #823b4f;
+    font-size: 30px;
+}
+.form-center {
+	display:flex;
+	justify-content: center;
+}
+</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet">
+</head>
+<body>
+    <h1 style="text-align:center; font-size:50px;"> Atmiņas spēle</h1>
+    <div></div> <label style="font-size:19px" for="spelesizmers" id="spelesizmers">Spēles laukuma izmērs:</label>
+    <button id="sakt" for="sakt" onclick = "laukums(2)"> 2X2 </button>
+    <button id="sakt4" for="sakt4" onclick = "laukums(4)"> 4X4 </button>
+    <div></div><label style="font-size:20px" for="gajienuskaits" id="gsk"></label></div>
+    <div> <label style="font-size:20px" for="ilgums" id="ilgums"></label></div>
+    <div class="form-center"> <form id="forma"></form> </div>
+     <button id="rez" for="rez" onclick = "rezultati()"> Rezultāti </button>
+    <div id="tabula2" for="tabula2" style="font-size:20px" class="results-bar"></div>
+    <div id="tabula4" for="tabula4" style="font-size:20px" class="results-bar"></div>
+    <script>
+    var timers; var sec;
+
+    function rezultati(){
+        izdzest();
+        let vieta2=1; let vieta4=1;
+            fetch('https://lauraskuja.pythonanywhere.com/database', {
+                method: 'GET',
+                headers: {'Content-Type': 'application/json'},
+        })
+        .then(res => res.json())
+        .then(data =>{
+            let lizm = document.createElement("DIV");
+            lizm.textContent = "2X2 Rezultāti:";
+            document.getElementById("tabula2").appendChild(lizm);
+            let lizms = document.createElement("DIV");
+            lizms.textContent = "4X4 Rezultāti:";
+            document.getElementById("tabula4").appendChild(lizms);
+            for(i=0;i<data.length;i++){
+                console.log(data[i].izmers);
+                if(data[i].izmers==2){
+                    let vieta = document.createElement("DIV");
+                    vieta.textContent = (vieta2) + ". vieta: " +data[i].vards+ " sekundes";
+                    document.getElementById("tabula2").appendChild(vieta);
+                    vieta2++;
+                }else if(data[i].izmers==4){
+                    let vieta = document.createElement("DIV");
+                    vieta.textContent = (vieta4) + ". vieta: " + data[i].vards+ " sekundes";
+                    document.getElementById("tabula4").appendChild(vieta);
+                    vieta4++;
+                }
+            }
+        })
+    }
+
+    function fetchResults(sekunde, vards, izmers){
+        var dict={ vards:vards, sekunde:sekunde, izmers:izmers};
+        console.log(JSON.stringify(dict));
+        fetch('https://lauraskuja.pythonanywhere.com/database', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(dict)
+        })
+        .then(res => res.json())
+        rezultati();
+    }
+
+    function izdzest(){
+        let izd = document.getElementById("tabula2");
+        while (izd.childNodes[0]) {
+            izd.removeChild(izd.childNodes[0]);
+        }
+        izd = document.getElementById("tabula4");
+        while (izd.childNodes[0]) {
+            izd.removeChild(izd.childNodes[0]);
+        }
+    }
+
+    function laukums(sk){
+    let izmers= sk;
+    let bildes= [ "static/e1.jpg","static/e2.jpg","static/e3.jpg","static/e4.jpg","static/e5.jpg","static/e6.jpg","static/e7.jpg","static/e8.jpg"];
+    let vardi= ["static/t1.jpg", "static/t2.jpg", "static/t3.jpg", "static/t4.jpg", "static/t5.jpg", "static/t6.jpg", "static/t7.jpg", "static/t8.jpg"];
+    let saraksts= []; let bvertibas= new Array (sk);
+    let c=0, punkti=0, ppoga, tpoga, p, gajienusk=0;
+    document.getElementById("gsk").innerHTML= "Gājienu skaits: 0";
+    document.getElementById("ilgums").innerHTML="Spēle ilgst: 0 sekundes"
+    while(forma.firstChild){
+        forma.firstChild.remove();
+    }
+    if(izmers==2){
+        var r=Math.floor(Math.random() * 7);
+        for(let i=r; i<r+2; i++){
+            saraksts.push(bildes[i]);
+            saraksts.push(vardi[i]);
+        }
+    }else{
+        for(let i=0; i<sk*sk/2; i++){
+            saraksts.push(bildes[i]);
+            saraksts.push(vardi[i]);
+        }
+    }
+    for(let i=0; i<sk; i++){
+        bvertibas[i]= new Array(sk);
+        for(let j=0; j<sk; j++){
+            var rand=Math.floor(Math.random()*saraksts.length);
+                bvertibas[i][j]= saraksts[rand];
+                saraksts.splice(rand, 1);
+        }
+    }
+
+    clearInterval(timers);
+    let sakums = Date.now();
+    timers = setInterval(function() {
+        let ms = Date.now() - sakums;
+        sec=Math.floor(ms/1000);
+        if (sec<60){
+            if(sec==1){
+                document.getElementById("ilgums").innerHTML="Spēle ilgst: "+sec+" sekundi";
+            }else{
+                document.getElementById("ilgums").innerHTML="Spēle ilgst: "+sec+" sekundes";
+
+            }
+        }else{
+            if (sec/60>=1 && sec/60 < 2){
+                if(sec==1){
+                    document.getElementById("ilgums").innerHTML="Spēle ilgst: "+Math.floor(sec/60)+" minūti un "+(sec-60*Math.floor(sec/60))+" sekundi";
+                }else{
+                   document.getElementById("ilgums").innerHTML="Spēle ilgst: "+Math.floor(sec/60)+" minūti un "+(sec-60*Math.floor(sec/60))+" sekundes";
+
+                }
+            }else{
+                if(sec==1){
+                    document.getElementById("ilgums").innerHTML="Spēle ilgst: "+Math.floor(sec/60)+" minūtes un "+(sec-60*Math.floor(sec/60))+" sekundi";
+                }else{
+                   document.getElementById("ilgums").innerHTML="Spēle ilgst: "+Math.floor(sec/60)+" minūtes un "+(sec-60*Math.floor(sec/60))+" sekundes";
+                }
+
+            }
+        }
+    }, 1000);
+
+
+    for(let i=0; i<sk; i++){
+        let tile = document.createElement("DIV"); tile.setAttribute("class", "tile");
+        for(let j=0; j<sk; j++){
+            let div = document.createElement("INPUT"); div.type="button"; div.setAttribute("class", "tile"); div.style.backgroundImage="url('static/background.png')"; div.setAttribute("id", ""+ bvertibas[i][j]);
+            div.onclick=()=>{
+                div.style.backgroundImage='url('+bvertibas[i][j]+')';
+                tpoga=div.id
+                if(c==0){
+                    c=1;
+                    p=div;
+                    ppoga= div.id;
+                }else if(ppoga[8]==tpoga[8]){
+                    c=0; punkti++; gajienusk++;
+                    parbaude(gajienusk, punkti, sk);
+                }
+                else{
+                    c=0; gajienusk++;
+                    setTimeout(function(){
+                            div.style.backgroundImage="url('static/background.png')";
+                            p.style.backgroundImage="url('static/background.png')";
+
+                    }, 1000);
+                    parbaude(gajienusk, punkti, sk);
+                }
+            }
+            tile.appendChild(div);
+        }
+        document.getElementById("forma").appendChild(tile);
+    }
+    }
+
+    function parbaude(gsk, punkti, sk){
+            document.getElementById("gsk").innerHTML= "Gājienu skaits: " +gsk;
+            if(punkti==sk*sk/2){
+                if (sec<60){
+                    if(sec==1){
+                        vards = prompt("\n Uzvara " +gsk+ " gājienos un " +sec+ " sekundē! \n Ievadiet vārdu, lai saglabātu rezultātu.");
+                    }else{
+                        vards = prompt("\n Uzvara " +gsk+ " gājienos un " +sec+ " sekundēs! \n Ievadiet vārdu, lai saglabātu rezultātu.");
+                    }
+                }else{
+                    if (sec/60>=1 && sec/60 < 2){
+                        if(sec==1){
+                            vards = prompt("\n Uzvara " +gsk+ " gājienos un 1 minūtē un "+(sec-60*Math.floor(sec/60))+" sekundē! \n Ievadiet vārdu, lai saglabātu rezultātu.");
+                        }else{
+                            vards = prompt("\n Uzvara " +gsk+ " gājienos un 1 minūtē un "+(sec-60*Math.floor(sec/60))+" sekundes! \n Ievadiet vārdu, lai saglabātu rezultātu.");
+                        }
+                    }else{
+                        if(sec==1){
+                            vards = prompt("\n Uzvara " +gsk+ " gājienos un " + Math.floor(sec/60)+ "minūtes un "+(sec-60*Math.floor(sec/60))+" sekundē! \n Ievadiet vārdu, lai saglabātu rezultātu.");
+                        }else{
+                            vards = prompt("\n Uzvara " +gsk+ " gājienos un " + Math.floor(sec/60)+ "minūtes un "+(sec-60*Math.floor(sec/60))+" sekundes! \n Ievadiet vārdu, lai saglabātu rezultātu.");
+                        }
+                    }
+                }
+                clearInterval(timers);
+                fetchResults(sec, vards, sk);
+            }
+    }
+    </script>
+</body>
+</html>
